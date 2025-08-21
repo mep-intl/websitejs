@@ -1621,10 +1621,10 @@ class StatisticsController {
 
   animateCounter(element) {
     const finalValue = element.textContent;
-    const hasNumber = /\d/.test(finalValue);
+    const matches = [...finalValue.matchAll(/\d+/g)];
 
-    if (!hasNumber) {
-      // For non-numeric values, just animate the appearance
+    if (matches.length === 0) {
+      // No numbers: fade and scale
       element.style.opacity = "0";
       element.style.transform = "scale(0.5)";
       setTimeout(() => {
@@ -1636,34 +1636,54 @@ class StatisticsController {
     }
 
     const duration = 2500;
-    const number = parseInt(finalValue.replace(/\D/g, ""));
+    const frameRate = 16;
+    const steps = duration / frameRate;
 
-    if (isNaN(number)) return;
-
-    const increment = number / (duration / 16);
-    let current = 0;
+    // Store the current animated values for all numbers
+    const animatedNumbers = matches.map((match) => ({
+      start: 0,
+      end: parseInt(match[0], 10),
+      index: match.index,
+      length: match[0].length,
+      current: 0,
+      increment: parseInt(match[0], 10) / steps,
+    }));
 
     element.style.color = "var(--professional-blue)";
 
     const timer = setInterval(() => {
-      current += increment;
-      if (current >= number) {
-        current = number;
-        clearInterval(timer);
+      let baseText = finalValue;
 
-        // Final styling
+      // Replace all numbers with their animated values
+      animatedNumbers.forEach((item) => {
+        item.current += item.increment;
+        if (item.current > item.end) item.current = item.end;
+      });
+
+      // Rebuild the string from original, replacing numbers
+      let result = "";
+      let lastIndex = 0;
+
+      animatedNumbers.forEach((item) => {
+        result += baseText.slice(lastIndex, item.index);
+        result += Math.floor(item.current).toString();
+        lastIndex = item.index + item.length;
+      });
+
+      result += baseText.slice(lastIndex);
+      element.textContent = result;
+
+      // Check if all are finished
+      const allDone = animatedNumbers.every((item) => item.current >= item.end);
+      if (allDone) {
+        clearInterval(timer);
         element.style.color = "var(--professional-navy)";
         element.style.transform = "scale(1.05)";
         setTimeout(() => {
           element.style.transform = "scale(1)";
         }, 200);
       }
-
-      element.textContent = finalValue.replace(
-        /\d+/,
-        Math.floor(current).toString()
-      );
-    }, 16);
+    }, frameRate);
   }
 }
 
