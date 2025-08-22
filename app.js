@@ -954,15 +954,13 @@ class FormController {
     try {
       LoadingManager.show(submitButton, "Sending Message...");
 
-      // Simulate form processing with realistic delay
       await new Promise((resolve) => setTimeout(resolve, 2500));
 
-      // Format phone number
       const phone = formData.get("phone");
       const formattedPhone = utils.formatPhoneNumber(phone);
 
-      // Create enhanced email content
       const emailData = {
+        subject: formData.get("emailSubject")?.trim(),
         name: formData.get("name")?.trim(),
         email: formData.get("email")?.trim(),
         phone: formattedPhone,
@@ -971,64 +969,17 @@ class FormController {
           formData.get("message")?.trim() || "No specific details provided",
       };
 
-      const emailSubject = `🏗️ Professional Consultation Request - ${emailData.name}`;
-      const emailBody = `
-MEP International Technical Services - New Client Inquiry
-═══════════════════════════════════════════════════════
+      // ✅ EmailJS send
+      await emailjs.send("service_jz65wx9", "template_5w1i91s", emailData);
 
-CLIENT INFORMATION:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-👤 Full Name: ${emailData.name}
-📧 Email Address: ${emailData.email}
-📞 Phone Number: ${emailData.phone}
-🔧 Service Interest: ${emailData.service}
-
-PROJECT DETAILS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-${emailData.message}
-
-FOLLOW-UP ACTIONS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-• Contact client within 2-4 hours
-• Schedule free consultation if appropriate
-• Send relevant service brochures
-• Add to CRM system
-
-SUBMISSION DETAILS:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-📅 Date: ${new Date().toLocaleDateString("en-AE")}
-⏰ Time: ${new Date().toLocaleTimeString("en-AE")}
-🌐 Source: MEP International Professional Website
-📍 Location: UAE
-
-═══════════════════════════════════════════════════════
-MEP International Technical Services L.L.C.
-Building Excellence Across the UAE
-📞 +971 50 3446652 | 📧 sales@mepinttec.com
-            `;
-
-      // Create enhanced mailto link
-      const mailtoLink = `mailto:sales@mepinttec.com?cc=rony@mepinttec.com&subject=${encodeURIComponent(
-        emailSubject
-      )}&body=${encodeURIComponent(emailBody)}`;
-
-      // Open email client
-      window.open(mailtoLink);
-
-      // Enhanced success feedback
       notification.show(
         "✅ Thank you for your consultation request! We'll contact you within 2-4 hours to discuss your project.",
         "success",
         8000
       );
 
-      // Clear auto-saved data
       this.clearAutoSave();
-
-      // Reset form with animation
       this.resetFormWithAnimation();
-
-      // Track form submission (if analytics available)
       this.trackFormSubmission(emailData);
     } catch (error) {
       console.error("Form submission error:", error);
